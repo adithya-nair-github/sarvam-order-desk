@@ -622,3 +622,48 @@ h1 span { color: #5b8064; }
 
 .fulfilment-block { border-left: 3px solid var(--orange); }
 .fulfilment-block .order-details dd { max-width: 70%; }
+
+/* 06 / Unit economics */
+.econ-verdict { margin: 0 0 14px; padding: 13px 15px; border-left: 4px solid var(--ink); border-radius: 0 7px 7px 0; background: var(--white); color: var(--ink); font-size: 13px; font-weight: 600; line-height: 1.55; }
+.econ-verdict.is-good { border-left-color: #5b8064; background: var(--mint); }
+.econ-verdict.is-mixed { border-left-color: #dda33f; background: var(--warning); color: var(--warning-ink); }
+.econ-verdict.is-bad { border-left-color: #a33416; background: #ffe3da; color: #7c2610; }
+.econ-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.econ-bars { margin: 0 0 12px; padding: 0; display: grid; gap: 12px; list-style: none; }
+.econ-bars li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 12px; align-items: center; }
+.econ-bar-label { grid-column: 1 / -1; color: var(--ink-soft); font-size: 11px; }
+.econ-bar { height: 10px; border-radius: 5px; background: #edf1ec; overflow: hidden; }
+.econ-bar i { display: block; height: 100%; border-radius: 5px; background: var(--orange); transition: width 200ms ease; }
+.econ-bar.is-mid i { background: #dda33f; }
+.econ-bar.is-good i { background: #5b8064; }
+.econ-bars strong { font-family: 'Space Grotesk', 'Segoe UI', sans-serif; font-size: 15px; font-variant-numeric: tabular-nums; }
+.econ-footnote { margin: 0 0 12px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.econ-presets { margin-bottom: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.econ-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.econ-field { display: grid; gap: 4px; align-content: start; }
+.econ-label { color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.econ-field input { width: 100%; min-height: 36px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: #f7f9f6; font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; }
+.econ-field input:focus-visible { outline: 3px solid #75a363; outline-offset: 2px; }
+.econ-hint { color: var(--muted); font-size: 10px; line-height: 1.4; }
+.econ-month { margin-top: 14px; }
+.econ-kpis { margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.econ-kpis div { display: grid; gap: 4px; align-content: start; }
+.econ-kpis dt { color: var(--muted); font-size: 10px; }
+.econ-kpis dd { margin: 0; font-family: 'Space Grotesk', 'Segoe UI', sans-serif; font-size: 19px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.econ-flows-heading { margin-top: 40px; }
+.econ-flows { margin: 18px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; list-style: none; }
+.econ-flow { padding: 16px 18px; border: 1px solid var(--line); border-radius: 7px; background: var(--white); display: grid; gap: 10px; align-content: start; }
+.econ-flow h3 { margin: 0; font-family: 'Space Grotesk', 'Segoe UI', sans-serif; font-size: 14px; font-weight: 600; }
+.econ-flow-row { padding-left: 11px; border-left: 3px solid #e8c8bc; }
+.econ-flow-row.is-short { border-left-color: #5b8064; }
+.econ-flow-label { margin: 0 0 3px; color: var(--ink); font-size: 11px; font-weight: 700; }
+.econ-flow-how { margin: 0; color: var(--ink-soft); font-size: 11.5px; line-height: 1.55; }
+
+@media (max-width: 860px) {
+  .econ-grid { grid-template-columns: 1fr; }
+  .econ-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .econ-flows { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .econ-fields { grid-template-columns: 1fr; }
+}

@@ -7,6 +7,7 @@
     <title>Namma Order Desk</title>
     <link rel="stylesheet" href="/styles.css">
     <script src="/app.js" type="module"></script>
+    <script src="/economics.js" type="module"></script>
   </head>
   <body>
     <header class="topbar">
@@ -26,7 +27,7 @@
           <p class="eyebrow"><span class="eyebrow-mark"></span> DISTRIBUTOR OPERATIONS CONSOLE</p>
           <h1 id="page-title">Your order,<br><span>in your words.</span></h1>
         </div>
-        <p class="intro-note">Voice order capture, exception handling, dispatch, collections and billing — one console, five modules.</p>
+        <p class="intro-note">Voice order capture, exception handling, dispatch, collections and billing — one console, six modules.</p>
       </section>
 
       <nav class="tabs" aria-label="Operations modules">
@@ -35,6 +36,7 @@
         <button class="tab" type="button" role="tab" id="tab-carrier" data-panel="panel-carrier" aria-selected="false" aria-controls="panel-carrier">03 / Carrier Dispatch &amp; ETS</button>
         <button class="tab" type="button" role="tab" id="tab-finance" data-panel="panel-finance" aria-selected="false" aria-controls="panel-finance">04 / Invoice Follow-up</button>
         <button class="tab" type="button" role="tab" id="tab-invoices" data-panel="panel-invoices" aria-selected="false" aria-controls="panel-invoices">05 / Auto-Generated Invoices</button>
+        <button class="tab" type="button" role="tab" id="tab-economics" data-panel="panel-economics" aria-selected="false" aria-controls="panel-economics">06 / Unit Economics</button>
       </nav>
 
       <section class="tab-panel" id="panel-order" role="tabpanel" aria-labelledby="tab-order">
@@ -203,6 +205,113 @@
         <ul class="invoice-list" id="invoice-list">
           <li class="delivery-loading">Loading invoices…</li>
         </ul>
+      </section>
+
+      <section class="tab-panel" id="panel-economics" role="tabpanel" aria-labelledby="tab-economics" hidden>
+        <div class="invoices-heading">
+          <div>
+            <p class="section-kicker">06 / UNIT ECONOMICS</p>
+            <h2>Does voice ordering pay for itself?</h2>
+            <p class="invoices-note">Cost per order for booking, delivery follow-up and collections, done by a telecaller, a field rep, or a voice agent. The point of the model: copying today's long calls onto AI saves about a third at best, and loses to cheaper telecallers. Redesigning the calls to be short is where the real saving comes from.</p>
+          </div>
+          <span class="roadmap-status">Editable model</span>
+        </div>
+
+        <p class="econ-verdict" id="econ-verdict" role="status"></p>
+
+        <div class="econ-grid">
+          <section class="result-block econ-results" aria-labelledby="econ-results-title">
+            <div class="block-heading"><h3 id="econ-results-title">Cost per order</h3><span class="json-type">book + follow up + collect</span></div>
+            <ul class="econ-bars">
+              <li><span class="econ-bar-label">Telecaller, today's calls</span><span class="econ-bar"><i id="econ-bar-telecaller"></i></span><strong id="econ-out-telecaller"></strong></li>
+              <li><span class="econ-bar-label">Voice AI, today's long calls</span><span class="econ-bar is-mid"><i id="econ-bar-ai-long"></i></span><strong id="econ-out-ai-long"></strong></li>
+              <li><span class="econ-bar-label">Voice AI, short-call design</span><span class="econ-bar is-good"><i id="econ-bar-ai-short"></i></span><strong id="econ-out-ai-short"></strong></li>
+            </ul>
+            <p class="econ-footnote">Field sales visit, booking only: <strong id="econ-out-field"></strong> per order.</p>
+            <dl class="order-details">
+              <div><dt>Call time per order, today</dt><dd id="econ-min-long"></dd></div>
+              <div><dt>Call time per order, redesigned</dt><dd id="econ-min-short"></dd></div>
+              <div><dt>Telecaller cost</dt><dd id="econ-telecaller-min"></dd></div>
+              <div><dt>Break-even AI price, long calls</dt><dd id="econ-be-long"></dd></div>
+              <div><dt>Break-even AI price, short calls</dt><dd id="econ-be-short"></dd></div>
+            </dl>
+          </section>
+
+          <section class="result-block" aria-labelledby="econ-inputs-title">
+            <div class="block-heading"><h3 id="econ-inputs-title">Assumptions</h3><span class="json-type">change any number</span></div>
+            <div class="econ-presets">
+              <span class="econ-label">Price preset</span>
+              <button type="button" class="new-order-button" data-price-preset="3">Managed agent ₹3/min</button>
+              <button type="button" class="new-order-button" data-price-preset="self">Self-built on Sarvam APIs</button>
+            </div>
+            <p class="econ-footnote">Self-built estimate: <strong id="econ-self-built"></strong> before telephony (<span id="econ-self-built-parts"></span>), from Sarvam's published rates.</p>
+            <div class="econ-fields">
+            <label class="econ-field">
+              <span class="econ-label">Distributors</span>
+              <input type="number" min="0" step="10" value="200" data-econ="distributors">
+            </label>
+            <label class="econ-field">
+              <span class="econ-label">Orders per distributor / month</span>
+              <input type="number" min="0" step="1" value="8" data-econ="orders_per_month">
+            </label>
+            <label class="econ-field">
+              <span class="econ-label">Voice AI price per minute (₹)</span>
+              <input type="number" min="0" step="0.1" value="3" data-econ="price_per_min">
+              <span class="econ-hint">All-in: model + telephony</span>
+            </label>
+            <label class="econ-field">
+              <span class="econ-label">Telephony per minute (₹)</span>
+              <input type="number" min="0" step="0.1" value="0.5" data-econ="telephony_per_min">
+              <span class="econ-hint">Assumption. Used by the self-built preset</span>
+            </label>
+            <label class="econ-field">
+              <span class="econ-label">WhatsApp / SMS message (₹)</span>
+              <input type="number" min="0" step="0.05" value="0.15" data-econ="message_cost">
+              <span class="econ-hint">Assumption</span>
+            </label>
+            <label class="econ-field">
+              <span class="econ-label">Telecaller cost / month (₹)</span>
+              <input type="number" min="0" step="1000" value="28000" data-econ="telecaller_monthly">
+              <span class="econ-hint">Assumption from Bengaluru pay bands</span>
+            </label>
+            <label class="econ-field">
+              <span class="econ-label">Telecaller talk minutes / day</span>
+              <input type="number" min="0" step="10" value="240" data-econ="telecaller_talk_min_per_day">
+              <span class="econ-hint">Assumption</span>
+            </label>
+            <label class="econ-field">
+              <span class="econ-label">Field sales officer / month (₹)</span>
+              <input type="number" min="0" step="1000" value="35000" data-econ="field_rep_monthly">
+              <span class="econ-hint">Assumption, incl. travel</span>
+            </label>
+            <label class="econ-field">
+              <span class="econ-label">Distributor visits / day</span>
+              <input type="number" min="0" step="1" value="6" data-econ="field_visits_per_day">
+              <span class="econ-hint">Assumption</span>
+            </label>
+            </div>
+          </section>
+        </div>
+
+        <section class="result-block econ-month" aria-labelledby="econ-month-title">
+          <div class="block-heading"><h3 id="econ-month-title">Per month, across all distributors</h3></div>
+          <dl class="econ-kpis">
+            <div><dt>Orders</dt><dd id="econ-month-orders"></dd></div>
+            <div><dt>Telecaller team</dt><dd id="econ-month-telecaller"></dd><span class="econ-hint" id="econ-month-ftes"></span></div>
+            <div><dt>Voice AI, long calls</dt><dd id="econ-month-ai-long"></dd></div>
+            <div><dt>Voice AI, short calls</dt><dd id="econ-month-ai-short"></dd></div>
+            <div><dt>Saving vs telecallers</dt><dd id="econ-month-saving"></dd></div>
+          </dl>
+        </section>
+
+        <div class="roadmap-heading econ-flows-heading">
+          <div>
+            <p class="section-kicker">HOW THE CALLS GET SHORT</p>
+            <h2>Don't automate the call. Remove most of it.</h2>
+          </div>
+        </div>
+        <ul class="econ-flows" id="econ-workflows"></ul>
+        <p class="roadmap-note">Sarvam rates are pay-as-you-go list prices from Sarvam's pricing docs (Nov 2026, excl. GST): speech-to-text ₹0.49/min, Bulbul v4 Flash ₹10 per 10K characters, sarvam-105b ₹15 input / ₹60 output per 1M tokens, managed voice agents from ₹3/min. Telecaller pay is based on published Bengaluru bands (₹15,000–24,000 fixed, ₹22,000–38,000 with incentive). Call lengths, call rates, message cost, telephony and field-rep figures are my assumptions, so change them to match a real distributor network.</p>
       </section>
 
       <footer class="page-footer">

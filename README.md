@@ -111,3 +111,7 @@ When the order draft has no missing fields, the server saves one record set to t
 ## Keeping data on Vercel
 
 Without a database, Vercel keeps the ledger in temporary storage that resets. For durable storage, add an Upstash Redis database from the Vercel Storage tab and connect it to the project. The app picks up `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or the `UPSTASH_REDIS_REST_*` names) automatically. `/api/health` reports `storage` as `durable`, `temporary` or `local file`.
+
+## 06 / Unit economics
+
+An editable cost-per-order model for booking, delivery follow-up and collections, comparing a telecaller, a field sales visit and a voice agent. It compares today's long calls with a short-call design: a proposed reorder the distributor just confirms, messages for routine status, UPI payment links, and calls only on exceptions or overdue invoices. It shows the break-even price per minute for each design and estimates a self-built agent's per-minute cost from Sarvam's published API rates. The model lives in `public/economics.js` and is tested in `economics.test.mjs`. Sarvam rates come from Sarvam's pricing docs (Nov 2026). Labour costs, call lengths and message costs are labelled assumptions in the UI.
