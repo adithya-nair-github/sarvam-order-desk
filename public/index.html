@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#183b32">
+    <title>Namma Order Desk</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" type="module"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Namma Order Desk home">
+        <span class="brand-mark" aria-hidden="true">N</span>
+        <span>Namma <span class="brand-light">Order Desk</span></span>
+      </a>
+      <div class="connection-state" id="connection-state" role="status">
+        <span class="connection-dot" aria-hidden="true"></span>
+        <span id="connection-label">Checking server</span>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow"><span class="eyebrow-mark"></span> DISTRIBUTOR OPERATIONS CONSOLE</p>
+          <h1 id="page-title">Your order,<br><span>in your words.</span></h1>
+        </div>
+        <p class="intro-note">Voice order capture, exception handling, dispatch, collections and billing — one console, five modules.</p>
+      </section>
+
+      <nav class="tabs" aria-label="Operations modules">
+        <button class="tab is-active" type="button" role="tab" id="tab-order" data-panel="panel-order" aria-selected="true" aria-controls="panel-order">01 / Order Desk</button>
+        <button class="tab" type="button" role="tab" id="tab-ndr" data-panel="panel-ndr" aria-selected="false" aria-controls="panel-ndr">02 / Non-Delivery Resolution</button>
+        <button class="tab" type="button" role="tab" id="tab-carrier" data-panel="panel-carrier" aria-selected="false" aria-controls="panel-carrier">03 / Carrier Dispatch &amp; ETS</button>
+        <button class="tab" type="button" role="tab" id="tab-finance" data-panel="panel-finance" aria-selected="false" aria-controls="panel-finance">04 / Invoice Follow-up</button>
+        <button class="tab" type="button" role="tab" id="tab-invoices" data-panel="panel-invoices" aria-selected="false" aria-controls="panel-invoices">05 / Auto-Generated Invoices</button>
+      </nav>
+
+      <section class="tab-panel" id="panel-order" role="tabpanel" aria-labelledby="tab-order">
+        <div class="workspace" aria-label="Voice order session">
+          <section class="conversation-pane" aria-labelledby="conversation-title">
+            <div class="pane-head">
+              <p class="section-kicker">VOICE CHAT</p>
+              <h2 id="conversation-title">Speak. The desk drafts.</h2>
+              <p class="pane-help">Say the products, quantities, delivery place and date. Answer the follow-ups by voice.</p>
+            </div>
+
+            <ol class="chat-log" id="chat-log" aria-live="polite">
+              <li class="chat-empty" id="chat-empty">No turns yet. Tap record and start speaking.</li>
+            </ol>
+
+            <div class="composer" aria-label="Record an order turn">
+              <div class="language-control">
+                <label class="language-label" for="language-select">SPOKEN LANGUAGE</label>
+                <select class="language-select" id="language-select" aria-label="Spoken language">
+                  <option value="unknown">Auto-detect</option>
+                </select>
+              </div>
+              <button class="record-button" id="record-button" type="button" aria-label="Start recording">
+                <span class="mic-icon" aria-hidden="true"></span>
+              </button>
+              <div class="composer-status">
+                <p class="record-status" id="record-status" role="status">Tap to record</p>
+                <p class="record-limit">Up to 28 seconds</p>
+              </div>
+            </div>
+            <p class="pane-foot"><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span> Audio is sent securely to the server for transcription.</p>
+          </section>
+
+          <section class="draft-pane" aria-labelledby="draft-title">
+            <div class="draft-head">
+              <div>
+                <p class="section-kicker">ORDER DRAFT</p>
+                <h2 id="draft-title">English draft &amp; JSON</h2>
+              </div>
+              <div class="results-actions">
+                <button type="button" class="new-order-button" id="new-order-button">New order</button>
+                <span class="draft-chip"><span aria-hidden="true">●</span> Draft</span>
+              </div>
+            </div>
+
+            <div class="draft-body">
+              <p class="draft-empty" id="draft-empty">The standardized English order draft appears here after your first recording. The agent keeps asking until every required field is filled; nothing is guessed.</p>
+              <div id="draft-blocks" hidden>
+                <section class="result-block summary-block" aria-labelledby="summary-label">
+                  <div class="block-heading">
+                    <h3 id="summary-label">Order summary</h3>
+                  </div>
+                  <ul class="item-list" id="item-list"></ul>
+                  <dl class="order-details">
+                    <div><dt>Deliver to</dt><dd id="delivery-location">Not recognized</dd></div>
+                    <div><dt>Delivery date</dt><dd id="delivery-date">Not mentioned</dd></div>
+                  </dl>
+                  <div class="credit-note" id="credit-note" hidden></div>
+                </section>
+
+                <section class="result-block json-block" aria-labelledby="json-label">
+                  <div class="block-heading">
+                    <h3 id="json-label">Structured JSON</h3>
+                    <span class="json-type">application/json</span>
+                  </div>
+                  <pre id="order-json"></pre>
+                </section>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="roadmap" aria-labelledby="roadmap-title">
+          <div class="roadmap-heading">
+            <div>
+              <p class="section-kicker">OPERATIONS ROADMAP</p>
+              <h2 id="roadmap-title">From order capture to follow-through.</h2>
+            </div>
+            <span class="roadmap-status">Modules 02-05 are simulated workflows</span>
+          </div>
+          <ol class="roadmap-steps">
+            <li class="roadmap-step is-current">
+              <p class="roadmap-stage">01 / PROTOTYPE</p>
+              <h3>Order standardization</h3>
+              <p>Translate distributor speech into an English ERP draft and resolve missing fields before review.</p>
+            </li>
+            <li class="roadmap-step">
+              <p class="roadmap-stage">02 / NEXT</p>
+              <h3>Non-delivery resolution</h3>
+              <p>Call the driver or shop, capture the failure reason, and reschedule only after the receiver confirms.</p>
+            </li>
+            <li class="roadmap-step">
+              <p class="roadmap-stage">03 / EXPAND</p>
+              <h3>Carrier capacity and ETS</h3>
+              <p>Call available carriers to confirm load capacity and estimated shipment timing; route price commitments for approval.</p>
+            </li>
+            <li class="roadmap-step">
+              <p class="roadmap-stage">04 / EXPAND</p>
+              <h3>Invoice follow-up</h3>
+              <p>Remind distributors about pending invoices, record promises to pay, and hand disputes to a person.</p>
+            </li>
+          </ol>
+          <p class="roadmap-note">Outbound calls, schedule changes, and payment commitments remain subject to approved scripts, consent, and human escalation rules.</p>
+        </section>
+      </section>
+
+      <section class="tab-panel" id="panel-ndr" role="tabpanel" aria-labelledby="tab-ndr" hidden>
+        <div class="deliveries-heading">
+          <div>
+            <p class="section-kicker">PHASE 02 / NON-DELIVERY RESOLUTION</p>
+            <h2 id="deliveries-title">Active deliveries / exception queue</h2>
+            <p class="deliveries-note">Simulated dispatch operations. "Trigger AI resolution call" replays a scripted agent conversation with the driver and receiver — no outbound call is placed and no ERP action is taken. State persists in a local demo ledger.</p>
+          </div>
+          <span class="roadmap-status">Simulated workflow</span>
+        </div>
+        <ul class="delivery-list" id="delivery-list">
+          <li class="delivery-loading">Loading active deliveries…</li>
+        </ul>
+      </section>
+
+      <section class="tab-panel" id="panel-carrier" role="tabpanel" aria-labelledby="tab-carrier" hidden>
+        <div class="carriers-heading">
+          <div>
+            <p class="section-kicker">PHASE 03 / CARRIER CAPACITY &amp; ETS</p>
+            <h2 id="carriers-title">Carrier &amp; logistics dispatch</h2>
+            <p class="carriers-note">Pick a carrier for a pending order and dispatch the simulated automated call. The agent confirms load capacity and estimated shipment timing on the call; every route price is recorded for human approval and never committed automatically.</p>
+          </div>
+          <span class="roadmap-status">Simulated workflow</span>
+        </div>
+        <ul class="carrier-list" id="carrier-list">
+          <li class="delivery-loading">Loading dispatch board…</li>
+        </ul>
+      </section>
+
+      <section class="tab-panel" id="panel-finance" role="tabpanel" aria-labelledby="tab-finance" hidden>
+        <div class="finance-heading">
+          <div>
+            <p class="section-kicker">PHASE 04 / INVOICE FOLLOW-UP</p>
+            <h2 id="finance-title">Financial ledger &amp; collections</h2>
+            <p class="finance-note">Demo credit state for seeded distributor accounts. The simulated collections call records a promise to pay, a dispute escalated to a person, or a reported payment awaiting verification. No money is moved automatically.</p>
+          </div>
+          <span class="roadmap-status">Simulated workflow</span>
+        </div>
+        <ul class="finance-list" id="finance-list">
+          <li class="delivery-loading">Loading collections board…</li>
+        </ul>
+      </section>
+
+      <section class="tab-panel" id="panel-invoices" role="tabpanel" aria-labelledby="tab-invoices" hidden>
+        <div class="invoices-heading">
+          <div>
+            <p class="section-kicker">PHASE 05 / AUTO-GENERATED INVOICES</p>
+            <h2 id="invoices-title">Proforma invoices</h2>
+            <p class="invoices-note">Every completed voice-order draft generates a proforma invoice automatically: itemized products, total value, and Net 7 Days credit terms. Uncatalogued products are flagged for pricing instead of being priced by guesswork.</p>
+          </div>
+          <span class="roadmap-status">Simulated billing</span>
+        </div>
+        <ul class="invoice-list" id="invoice-list">
+          <li class="delivery-loading">Loading invoices…</li>
+        </ul>
+      </section>
+
+      <footer class="page-footer">
+        <span>DEMO CATALOG</span>
+        <span>Wheat flour · Iodized salt · Leaf tea · Cooking oil</span>
+      </footer>
+    </main>
+  </body>
+</html>
