@@ -103,3 +103,11 @@ The API route is `POST /api/orders/turn` (multipart fields `audio`, `language`, 
 ## Deploy on Vercel
 
 Import this repo in Vercel (framework preset: Other, no build command). Add the environment variable `SARVAM_API_KEY` under Project Settings, then deploy. `public/` is served as static files and `api/index.js` runs the server routes as one serverless function. On Vercel the demo ledger lives in `/tmp`, so orders, invoices and call logs reset when the function restarts.
+
+## What a completed voice order creates
+
+When the order draft has no missing fields, the server saves one record set to the ledger: an order (ORD-xxxx, source "voice order"), a proforma invoice linked to it, a simulated transport request to the cheapest carrier that fits the estimated load, and a balance update on the customer account (ACC-2001). Tabs 02 to 05 read the same ledger, so the order shows up in each of them.
+
+## Keeping data on Vercel
+
+Without a database, Vercel keeps the ledger in temporary storage that resets. For durable storage, add an Upstash Redis database from the Vercel Storage tab and connect it to the project. The app picks up `KV_REST_API_URL` and `KV_REST_API_TOKEN` (or the `UPSTASH_REDIS_REST_*` names) automatically. `/api/health` reports `storage` as `durable`, `temporary` or `local file`.

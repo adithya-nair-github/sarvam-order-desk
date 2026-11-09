@@ -14,6 +14,10 @@ const deliveryDate = document.querySelector("#delivery-date");
 const creditNote = document.querySelector("#credit-note");
 const orderJson = document.querySelector("#order-json");
 const newOrderButton = document.querySelector("#new-order-button");
+const fulfilmentBlock = document.querySelector("#fulfilment-block");
+const fulfilmentDetails = document.querySelector("#fulfilment-details");
+const fulfilmentStorage = document.querySelector("#fulfilment-storage");
+let storageMode = "";
 let selectedLanguage = AUTO_LANGUAGE;
 let recorder;
 let mediaStream;
@@ -38,6 +42,7 @@ async function checkServer() {
   try {
     const response = await fetch("/api/health");
     const status = await response.json();
+    storageMode = status.storage || "";
     if (status.sarvam_configured) {
       connectionState.classList.add("is-ready");
       connectionLabel.textContent = "API key configured";
@@ -269,6 +274,41 @@ function renderDraft(order, creditInfo) {
   }
 }
 
+function money(value) {
+  return `₹${Number(value).toLocaleString("en-IN")}`;
+}
+
+function transportSummary(transport) {
+  if (!transport) return "No carrier could take this load. Needs manual dispatch.";
+  const name = `${transport.carrier.name} · ${transport.carrier.vehicle}`;
+  if (transport.outcome === "Rejected") return `${name} declined. Order stays pending dispatch.`;
+  const ets = transport.ets ? `pickup ${transport.ets.pickup_date}, delivery ${transport.ets.delivery_date}` : "";
+  const price = transport.pricing ? `${money(transport.pricing.carrier_rate_inr_per_km)}/km, price awaiting approval` : "";
+  return `${name} · ${transport.outcome}${ets ? ` · ${ets}` : ""}${price ? ` · ${price}` : ""}`;
+}
+
+function renderFulfilment({ delivery, invoice, transport, account }) {
+  const rows = [
+    ["Order record", `${delivery.order_id} · ${delivery.status} · est. ${delivery.load_weight_kg} kg`],
+    ["Invoice", invoice.total_inr === null ? `${invoice.invoice_id} · pricing pending` : `${invoice.invoice_id} · ${money(invoice.total_inr)} · ${invoice.credit_terms}`],
+    ["Transport request", transportSummary(transport)]
+  ];
+  if (account) {
+    rows.push(["Customer balance", `${account.distributor} now owes ${money(account.outstanding_inr)} of ${money(account.credit_limit_inr)}${account.over_credit_limit ? " (over limit)" : ""}`]);
+  }
+  fulfilmentDetails.replaceChildren(...rows.map(([label, value]) => {
+    const row = document.createElement("div");
+    const dt = document.createElement("dt");
+    const dd = document.createElement("dd");
+    dt.textContent = label;
+    dd.textContent = value;
+    row.append(dt, dd);
+    return row;
+  }));
+  fulfilmentStorage.textContent = storageMode === "temporary" ? "temporary demo ledger" : "saved to ledger";
+  fulfilmentBlock.hidden = false;
+}
+
 function handleTurn(payload) {
   appendDistributorTurn(payload);
   payload.warnings.forEach((warning) => appendNote(warning));
@@ -283,8 +323,12 @@ function handleTurn(payload) {
   } else {
     appendAgentTurn({ question: "Order draft is complete and ready for ERP review." });
   }
-  if (payload.invoice) {
-    appendNote(`Proforma invoice ${payload.invoice.invoice_id} generated automatically — see tab 05 / Auto-Generated Invoices.`);
+  if (payload.storage) storageMode = payload.storage;
+  if (payload.fulfilment) {
+    renderFulfilment(payload.fulfilment);
+    appendNote(`Order ${payload.fulfilment.delivery.order_id} created, invoice ${payload.fulfilment.invoice.invoice_id} generated and a transport request sent. See tabs 02 to 05.`);
+    loadDeliveries();
+    loadAccounts();
     loadInvoices();
   }
 }
@@ -305,6 +349,7 @@ function resetSession() {
   chatLog.replaceChildren(chatEmptyNode());
   draftEmpty.hidden = false;
   draftBlocks.hidden = true;
+  fulfilmentBlock.hidden = true;
   recordStatus.textContent = "Tap to record";
   recordButton.focus();
 }

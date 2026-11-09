@@ -8,7 +8,8 @@ import { findMissingFields, sanitizeOrder } from "./order-schema.mjs";
 import { buildResolution, ensureLedger, writeLedger, EXCEPTION_STATUSES } from "./ndr.mjs";
 import { buildCarrierDispatch, CARRIER_REGISTRY, getCarrier } from "./carriers.mjs";
 import { agingDays, buildCollectionsCall } from "./finance.mjs";
-import { buildInvoice } from "./invoices.mjs";
+import { creditSnapshot, fulfilOrder } from "./fulfilment.mjs";
+import { KV_LEDGER_PATH, kvConfigured } from "./kv.mjs";
 
 const APP_DIR = resolve(fileURLToPath(new URL(".", import.meta.url)));
 const PORT = Number(process.env.PORT || 4173);
@@ -21,7 +22,8 @@ const CHAT_MODEL = "sarvam-105b";
 const CONVERSATION_MODEL = "sarvam-105b-conversations";
 const ON_VERCEL = Boolean(process.env.VERCEL);
 const PUBLIC_DIR = resolve(APP_DIR, "public");
-const LEDGER_PATH = ON_VERCEL ? "/tmp/orders_ledger.json" : resolve(APP_DIR, "orders_ledger.json");
+const STORAGE_MODE = kvConfigured() ? "durable" : ON_VERCEL ? "temporary" : "local file";
+const LEDGER_PATH = kvConfigured() ? KV_LEDGER_PATH : ON_VERCEL ? "/tmp/orders_ledger.json" : resolve(APP_DIR, "orders_ledger.json");
 const SARVAM_LANGUAGE_CODES = new Set([AUTO_LANGUAGE, ...SARVAM_LANGUAGES.map(({ code }) => code)]);
 const SARVAM_LANGUAGE_NAMES = new Map(SARVAM_LANGUAGES.map(({ code, name }) => [code, name]));
 const PRODUCT_KEYTERMS = [...new Set(PRODUCT_CATALOG.flatMap(({ product, aliases }) => [product, ...aliases]))].slice(0, 50);
@@ -29,12 +31,6 @@ const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8"
-};
-
-const DEMO_CREDIT = {
-  account: "Demo distributor account",
-  outstanding_amount_inr: 18450,
-  due_date: "2026-11-15"
 };
 
 const ORDER_RESPONSE_SCHEMA = {
@@ -453,17 +449,27 @@ async function listInvoices(response) {
   }
 }
 
-async function generateInvoice(order) {
+async function completeOrder(order, wantsCredit) {
   try {
     return await withLedgerLock(async () => {
       const ledger = await ensureLedger(LEDGER_PATH);
-      const invoice = buildInvoice(order, ledger.invoices.length + 1, new Date());
-      ledger.invoices.push(invoice);
+      const credit = wantsCredit ? creditSnapshot(ledger) : null;
+      const fulfilment = fulfilOrder(ledger, order, new Date());
       await writeLedger(LEDGER_PATH, ledger);
-      return invoice;
+      return { fulfilment, credit };
     });
   } catch (error) {
-    console.error("Invoice generation error:", error);
+    console.error("Order fulfilment error:", error);
+    return { fulfilment: null, credit: null, failed: true };
+  }
+}
+
+async function readCredit() {
+  try {
+    const ledger = await withLedgerLock(() => ensureLedger(LEDGER_PATH));
+    return creditSnapshot(ledger);
+  } catch (error) {
+    console.error("Credit lookup error:", error);
     return null;
   }
 }
@@ -538,9 +544,18 @@ async function transcribe(request, response) {
     }
 
     const previousDraftComplete = currentOrder && findMissingFields(currentOrder).length === 0;
-    const invoice = missingFields.length === 0 && !previousDraftComplete
-      ? await generateInvoice(normalized.order)
-      : null;
+    let fulfilment = null;
+    let creditInfo = null;
+    const wantsCredit = normalized.order.asked_about_pending_credit;
+    if (missingFields.length === 0 && !previousDraftComplete) {
+      const completed = await completeOrder(normalized.order, wantsCredit);
+      fulfilment = completed.fulfilment;
+      creditInfo = completed.credit;
+      if (completed.failed) warnings.push("The order draft is complete, but it could not be saved to the ledger. Try again.");
+    } else if (wantsCredit) {
+      creditInfo = await readCredit();
+    }
+    const invoice = fulfilment?.invoice ?? null;
 
     let replyAudio = null;
     if (normalized.followUpQuestion) {
@@ -563,7 +578,9 @@ async function transcribe(request, response) {
       reply_audio_base64: replyAudio,
       warnings,
       invoice,
-      credit_info: normalized.order.asked_about_pending_credit ? DEMO_CREDIT : null
+      fulfilment,
+      storage: STORAGE_MODE,
+      credit_info: creditInfo
     });
   } catch (error) {
     console.error("Sarvam order turn error:", error);
@@ -612,7 +629,7 @@ export async function handler(request, response) {
     url.pathname = `/api/${rest}`;
   }
   if (request.method === "GET" && url.pathname === "/api/health") {
-    json(response, 200, { sarvam_configured: Boolean(process.env.SARVAM_API_KEY) });
+    json(response, 200, { sarvam_configured: Boolean(process.env.SARVAM_API_KEY), storage: STORAGE_MODE });
     return;
   }
   if (request.method === "POST" && ["/api/orders/transcribe", "/api/orders/turn"].includes(url.pathname)) {

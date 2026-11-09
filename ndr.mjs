@@ -1,6 +1,21 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { SEED_ACCOUNTS } from "./finance.mjs";
 import { SEED_INVOICES } from "./invoices.mjs";
+import { KV_LEDGER_PATH, kvGet, kvSet } from "./kv.mjs";
+
+async function readStore(path) {
+  if (path === KV_LEDGER_PATH) {
+    const value = await kvGet("orders_ledger");
+    if (value === null) throw new Error("Ledger not created yet.");
+    return value;
+  }
+  return readFile(path, "utf8");
+}
+
+async function writeStore(path, text) {
+  if (path === KV_LEDGER_PATH) return kvSet("orders_ledger", text);
+  return writeFile(path, text, "utf8");
+}
 
 export const EXCEPTION_STATUSES = ["Delivery Failed - Shop Closed", "Refused - Quantity Mismatch"];
 
@@ -81,7 +96,7 @@ const SEED_DELIVERIES = [
 
 export async function ensureLedger(ledgerPath) {
   try {
-    const content = await readFile(ledgerPath, "utf8");
+    const content = await readStore(ledgerPath);
     const ledger = JSON.parse(content);
     if (ledger && Array.isArray(ledger.deliveries)) {
       let changed = false;
@@ -97,7 +112,8 @@ export async function ensureLedger(ledgerPath) {
       return ledger;
     }
     throw new Error("Ledger file is missing a deliveries array.");
-  } catch {
+  } catch (error) {
+    if (error?.kvFailure) throw error;
     const seeded = {
       deliveries: structuredClone(SEED_DELIVERIES),
       accounts: structuredClone(SEED_ACCOUNTS),
@@ -109,7 +125,7 @@ export async function ensureLedger(ledgerPath) {
 }
 
 export async function writeLedger(ledgerPath, ledger) {
-  await writeFile(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`, "utf8");
+  await writeStore(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`);
 }
 
 function utcDateOnly(now, extraDays) {

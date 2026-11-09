@@ -619,3 +619,6 @@ h1 span { color: #5b8064; }
   .print-target { position: absolute; inset: 0 auto auto 0; width: 100%; box-shadow: none; border: 1px solid var(--line); }
   .print-target .invoice-actions { display: none; }
 }
+
+.fulfilment-block { border-left: 3px solid var(--orange); }
+.fulfilment-block .order-details dd { max-width: 70%; }
